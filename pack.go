@@ -109,26 +109,26 @@ func ReadFixedBytes(reader io.ReadSeekCloser, length *uint32) ([]byte, uint32, e
 		read_length = *length
 	}
 
-	bytes := make([]byte, read_length)
+	data := make([]byte, read_length)
 
-	_, err := reader.Read(bytes[:read_length])
+	_, err := reader.Read(data[:read_length])
 	if err != nil {
 		return nil, 0, err
 	}
 
-	return bytes, read_length, nil
+	return data, read_length, nil
 }
 
-func WriteFixedBytes(reader io.WriteSeeker, bytes []byte, length *uint32) error {
+func WriteFixedBytes(reader io.WriteSeeker, data []byte, length *uint32) error {
 	var write_length uint32
 
 	if length == nil {
-		write_length = uint32(len(bytes))
+		write_length = uint32(len(data))
 	} else {
 		write_length = *length
 	}
 
-	_, err := reader.Write(bytes[:write_length])
+	_, err := reader.Write(data[:write_length])
 	if err != nil {
 		return err
 	}
@@ -163,8 +163,8 @@ func ReadCountedBytes(reader io.ReadSeekCloser, count *uint32, isBigEndian bool)
 	return ReadFixedBytes(reader, &read_length)
 }
 
-func WriteCountedBytes(reader io.WriteSeeker, bytes []byte, count *uint32, length *uint32, isBigEndian bool) error {
-	buffer_size := uint32(len(bytes))
+func WriteCountedBytes(reader io.WriteSeeker, data []byte, count *uint32, length *uint32, isBigEndian bool) error {
+	buffer_size := uint32(len(data))
 
 	var byte_count uint32
 
@@ -203,7 +203,7 @@ func WriteCountedBytes(reader io.WriteSeeker, bytes []byte, count *uint32, lengt
 		return err
 	}
 
-	_, err = reader.Write(bytes[:write_length])
+	_, err = reader.Write(data[:write_length])
 	if err != nil {
 		return err
 	}
@@ -244,10 +244,10 @@ func ReadNullTerminatedBytes(reader io.ReadSeekCloser) ([]byte, uint32, error) {
 				read_length = uint32(end_position - start_position)
 			}
 
-			bytes := make([]byte, read_length)
+			data := make([]byte, read_length)
 
 			if read_length == 0 {
-				return bytes, uint32(read_length), nil
+				return data, uint32(read_length), nil
 			}
 
 			_, err = reader.Seek(start_position, io.SeekStart)
@@ -255,27 +255,27 @@ func ReadNullTerminatedBytes(reader io.ReadSeekCloser) ([]byte, uint32, error) {
 				return nil, 0, err
 			}
 
-			_, err = reader.Read(bytes)
+			_, err = reader.Read(data)
 			if err != nil {
 				return nil, 0, err
 			}
 
 			reader.Seek(1, io.SeekCurrent)
-			return bytes, uint32(read_length), nil
+			return data, uint32(read_length), nil
 		}
 	}
 }
 
-func WriteNullTerminatedBytes(reader io.WriteSeeker, bytes []byte, length *uint32) error {
+func WriteNullTerminatedBytes(reader io.WriteSeeker, data []byte, length *uint32) error {
 	var write_length uint32
 
 	if length == nil {
-		write_length = uint32(len(bytes))
+		write_length = uint32(len(data))
 	} else {
 		write_length = *length
 	}
 
-	_, err := reader.Write(bytes[:write_length])
+	_, err := reader.Write(data[:write_length])
 	if err != nil {
 		return err
 	}
@@ -291,12 +291,12 @@ func WriteNullTerminatedBytes(reader io.WriteSeeker, bytes []byte, length *uint3
 }
 
 func ReadFixedString(reader io.ReadSeekCloser, length *uint32) (string, uint32, error) {
-	bytes, read_length, err := ReadFixedBytes(reader, length)
+	data, read_length, err := ReadFixedBytes(reader, length)
 	if err != nil {
 		return "", 0, err
 	}
 
-	return string(bytes), read_length, nil
+	return string(data), read_length, nil
 }
 
 func WriteFixedString(reader io.WriteSeeker, str string, length *uint32) error {
@@ -304,12 +304,12 @@ func WriteFixedString(reader io.WriteSeeker, str string, length *uint32) error {
 }
 
 func ReadCountedString(reader io.ReadSeekCloser, count *uint32, isBigEndian bool) (string, uint32, error) {
-	bytes, read_length, err := ReadCountedBytes(reader, count, isBigEndian)
+	data, read_length, err := ReadCountedBytes(reader, count, isBigEndian)
 	if err != nil {
 		return "", 0, err
 	}
 
-	return string(bytes), read_length, nil
+	return string(data), read_length, nil
 }
 
 func WriteCountedString(reader io.WriteSeeker, str string, count *uint32, length *uint32, isBigEndian bool) error {
@@ -317,12 +317,12 @@ func WriteCountedString(reader io.WriteSeeker, str string, count *uint32, length
 }
 
 func ReadNullTerminatedString(reader io.ReadSeekCloser) (string, uint32, error) {
-	bytes, read_length, err := ReadNullTerminatedBytes(reader)
+	data, read_length, err := ReadNullTerminatedBytes(reader)
 	if err != nil {
 		return "", 0, err
 	}
 
-	return string(bytes), read_length, nil
+	return string(data), read_length, nil
 }
 
 func WriteNullTerminatedString(reader io.WriteSeeker, str string) error {
