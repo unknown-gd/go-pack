@@ -13,6 +13,21 @@ var integer []byte = make([]byte, 4)
 var short []byte = make([]byte, 2)
 var char []byte = make([]byte, 1)
 
+func ReadUInt8(reader io.ReadSeekCloser) (uint8, error) {
+	_, err := reader.Read(char[:1])
+	if err != nil {
+		return 0, err
+	}
+
+	return char[0], nil
+}
+
+func WriteUInt8(reader io.WriteSeeker, value uint8) error {
+	char[0] = value
+	_, err := reader.Write(char[:1])
+	return err
+}
+
 func ReadUInt16(reader io.ReadSeekCloser, isBigEndian bool) (uint16, error) {
 	_, err := reader.Read(short[:2])
 	if err != nil {
@@ -85,9 +100,22 @@ func WriteUInt64(reader io.WriteSeeker, value uint64, isBigEndian bool) error {
 	return err
 }
 
+func ReadInt8(reader io.ReadSeekCloser) (int8, error) {
+	x, err := ReadUInt8(reader)
+	return int8(x), err
+}
+
+func WriteInt8(reader io.WriteSeeker, value int8) error {
+	return WriteUInt8(reader, uint8(value))
+}
+
 func ReadInt16(reader io.ReadSeekCloser, isBigEndian bool) (int16, error) {
 	x, err := ReadUInt16(reader, isBigEndian)
 	return int16(x), err
+}
+
+func WriteInt16(reader io.WriteSeeker, value int16, isBigEndian bool) error {
+	return WriteUInt16(reader, uint16(value), isBigEndian)
 }
 
 func ReadInt32(reader io.ReadSeekCloser, isBigEndian bool) (int32, error) {
@@ -95,9 +123,17 @@ func ReadInt32(reader io.ReadSeekCloser, isBigEndian bool) (int32, error) {
 	return int32(x), err
 }
 
+func WriteInt32(reader io.WriteSeeker, value int32, isBigEndian bool) error {
+	return WriteUInt32(reader, uint32(value), isBigEndian)
+}
+
 func ReadInt64(reader io.ReadSeekCloser, isBigEndian bool) (int64, error) {
 	x, err := ReadUInt64(reader, isBigEndian)
 	return int64(x), err
+}
+
+func WriteInt64(reader io.WriteSeeker, value int64, isBigEndian bool) error {
+	return WriteUInt64(reader, uint64(value), isBigEndian)
 }
 
 func ReadFixedBytes(reader io.ReadSeekCloser, length *uint32) ([]byte, uint32, error) {
