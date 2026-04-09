@@ -3,6 +3,7 @@ package pack
 import (
 	"encoding/binary"
 	"errors"
+	"hash/crc32"
 	"io"
 )
 
@@ -12,6 +13,38 @@ var long []byte = make([]byte, 8)
 var integer []byte = make([]byte, 4)
 var short []byte = make([]byte, 2)
 var char []byte = make([]byte, 1)
+
+const CRC32_STEP = 4096
+
+var crc32_buffer []byte = make([]byte, CRC32_STEP)
+
+func CRC32IEEE(reader io.ReadSeeker, file_size int64) (uint32, error) {
+	checksum := crc32.New(crc32.IEEETable)
+
+	end_position := int((file_size/CRC32_STEP)-1) * CRC32_STEP
+
+	for i := 0; i <= end_position; i += CRC32_STEP {
+		_, err := reader.Read(crc32_buffer)
+		if err != nil {
+			return 0, err
+		}
+
+		checksum.Write(crc32_buffer)
+	}
+
+	remainder := file_size % CRC32_STEP
+
+	if remainder != 0 {
+		_, err := reader.Read(crc32_buffer[:remainder])
+		if err != nil {
+			return 0, err
+		}
+
+		checksum.Write(crc32_buffer[:remainder])
+	}
+
+	return checksum.Sum32(), nil
+}
 
 func ReadUInt8(reader io.ReadSeeker) (uint8, error) {
 	_, err := reader.Read(char[:1])
