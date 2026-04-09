@@ -9,16 +9,11 @@ import (
 
 var ErrNotEnoughBytes = errors.New("not enough bytes")
 
-var long []byte = make([]byte, 8)
-var integer []byte = make([]byte, 4)
-var short []byte = make([]byte, 2)
-var char []byte = make([]byte, 1)
-
 const CRC32_STEP = 4096
 
 var crc32_buffer []byte = make([]byte, CRC32_STEP)
 
-func CRC32IEEE(reader io.ReadSeeker, file_size int64) (uint32, error) {
+func CRC32IEEE(reader io.ReadSeeker, file_size int64, value *uint32) error {
 	checksum := crc32.New(crc32.IEEETable)
 
 	end_position := int((file_size/CRC32_STEP)-1) * CRC32_STEP
@@ -26,7 +21,7 @@ func CRC32IEEE(reader io.ReadSeeker, file_size int64) (uint32, error) {
 	for i := 0; i <= end_position; i += CRC32_STEP {
 		_, err := reader.Read(crc32_buffer)
 		if err != nil {
-			return 0, err
+			return err
 		}
 
 		checksum.Write(crc32_buffer)
@@ -37,136 +32,126 @@ func CRC32IEEE(reader io.ReadSeeker, file_size int64) (uint32, error) {
 	if remainder != 0 {
 		_, err := reader.Read(crc32_buffer[:remainder])
 		if err != nil {
-			return 0, err
+			return err
 		}
 
 		checksum.Write(crc32_buffer[:remainder])
 	}
 
-	return checksum.Sum32(), nil
+	*value = checksum.Sum32()
+	return nil
 }
 
-func ReadUInt8(reader io.ReadSeeker) (uint8, error) {
-	_, err := reader.Read(char[:1])
-	if err != nil {
-		return 0, err
-	}
-
-	return char[0], nil
+func ReadUInt8(reader io.ReadSeeker, value *uint8) error {
+	return binary.Read(reader, binary.NativeEndian, value)
 }
 
 func WriteUInt8(writer io.WriteSeeker, value uint8) error {
-	char[0] = value
-	_, err := writer.Write(char[:1])
-	return err
+	return binary.Write(writer, binary.NativeEndian, &value)
 }
 
-func ReadUInt16(reader io.ReadSeeker, isBigEndian bool) (uint16, error) {
-	_, err := reader.Read(short[:2])
-	if err != nil {
-		return 0, err
-	}
-
+func ReadUInt16(reader io.ReadSeeker, isBigEndian bool, value *uint16) error {
 	if isBigEndian {
-		return binary.BigEndian.Uint16(short[:2]), nil
+		return binary.Read(reader, binary.BigEndian, value)
 	} else {
-		return binary.LittleEndian.Uint16(short[:2]), nil
+		return binary.Read(reader, binary.LittleEndian, value)
 	}
 }
 
-func WriteUInt16(writer io.WriteSeeker, value uint16, isBigEndian bool) error {
+func WriteUInt16(writer io.WriteSeeker, isBigEndian bool, value uint16) error {
 	if isBigEndian {
-		binary.BigEndian.PutUint16(short[:2], value)
+		return binary.Write(writer, binary.BigEndian, &value)
 	} else {
-		binary.LittleEndian.PutUint16(short[:2], value)
+		return binary.Write(writer, binary.LittleEndian, &value)
 	}
-
-	_, err := writer.Write(short[:2])
-	return err
 }
 
-func ReadUInt32(reader io.ReadSeeker, isBigEndian bool) (uint32, error) {
-	_, err := reader.Read(integer[:4])
-	if err != nil {
-		return 0, err
-	}
-
+func ReadUInt32(reader io.ReadSeeker, isBigEndian bool, value *uint32) error {
 	if isBigEndian {
-		return binary.BigEndian.Uint32(integer[:4]), nil
+		return binary.Read(reader, binary.BigEndian, value)
 	} else {
-		return binary.LittleEndian.Uint32(integer[:4]), nil
+		return binary.Read(reader, binary.LittleEndian, value)
 	}
 }
 
-func WriteUInt32(writer io.WriteSeeker, value uint32, isBigEndian bool) error {
+func WriteUInt32(writer io.WriteSeeker, isBigEndian bool, value uint32) error {
 	if isBigEndian {
-		binary.BigEndian.PutUint32(integer[:4], value)
+		return binary.Write(writer, binary.BigEndian, &value)
 	} else {
-		binary.LittleEndian.PutUint32(integer[:4], value)
+		return binary.Write(writer, binary.LittleEndian, &value)
 	}
-
-	_, err := writer.Write(integer[:4])
-	return err
 }
 
-func ReadUInt64(reader io.ReadSeeker, isBigEndian bool) (uint64, error) {
-	_, err := reader.Read(long[:8])
-	if err != nil {
-		return 0, err
-	}
-
+func ReadUInt64(reader io.ReadSeeker, isBigEndian bool, value *uint64) error {
 	if isBigEndian {
-		return binary.BigEndian.Uint64(long[:8]), nil
+		return binary.Read(reader, binary.BigEndian, value)
 	} else {
-		return binary.LittleEndian.Uint64(long[:8]), nil
+		return binary.Read(reader, binary.LittleEndian, value)
 	}
 }
 
-func WriteUInt64(writer io.WriteSeeker, value uint64, isBigEndian bool) error {
+func WriteUInt64(writer io.WriteSeeker, isBigEndian bool, value uint64) error {
 	if isBigEndian {
-		binary.BigEndian.PutUint64(long[:8], value)
+		return binary.Write(writer, binary.BigEndian, &value)
 	} else {
-		binary.LittleEndian.PutUint64(long[:8], value)
+		return binary.Write(writer, binary.LittleEndian, &value)
 	}
-
-	_, err := writer.Write(long[:8])
-	return err
 }
 
-func ReadInt8(reader io.ReadSeeker) (int8, error) {
-	x, err := ReadUInt8(reader)
-	return int8(x), err
+func ReadInt8(reader io.ReadSeeker, value *int8) error {
+	return binary.Read(reader, binary.NativeEndian, value)
 }
 
 func WriteInt8(writer io.WriteSeeker, value int8) error {
-	return WriteUInt8(writer, uint8(value))
+	return binary.Write(writer, binary.NativeEndian, &value)
 }
 
-func ReadInt16(reader io.ReadSeeker, isBigEndian bool) (int16, error) {
-	x, err := ReadUInt16(reader, isBigEndian)
-	return int16(x), err
+func ReadInt16(reader io.ReadSeeker, isBigEndian bool, value *int16) error {
+	if isBigEndian {
+		return binary.Read(reader, binary.BigEndian, value)
+	} else {
+		return binary.Read(reader, binary.LittleEndian, value)
+	}
 }
 
-func WriteInt16(writer io.WriteSeeker, value int16, isBigEndian bool) error {
-	return WriteUInt16(writer, uint16(value), isBigEndian)
+func WriteInt16(writer io.WriteSeeker, isBigEndian bool, value int16) error {
+	if isBigEndian {
+		return binary.Write(writer, binary.BigEndian, &value)
+	} else {
+		return binary.Write(writer, binary.LittleEndian, &value)
+	}
 }
 
-func ReadInt32(reader io.ReadSeeker, isBigEndian bool) (int32, error) {
-	x, err := ReadUInt32(reader, isBigEndian)
-	return int32(x), err
+func ReadInt32(reader io.ReadSeeker, isBigEndian bool, value *int32) error {
+	if isBigEndian {
+		return binary.Read(reader, binary.BigEndian, value)
+	} else {
+		return binary.Read(reader, binary.LittleEndian, value)
+	}
 }
 
-func WriteInt32(writer io.WriteSeeker, value int32, isBigEndian bool) error {
-	return WriteUInt32(writer, uint32(value), isBigEndian)
+func WriteInt32(writer io.WriteSeeker, isBigEndian bool, value int32) error {
+	if isBigEndian {
+		return binary.Write(writer, binary.BigEndian, &value)
+	} else {
+		return binary.Write(writer, binary.LittleEndian, &value)
+	}
 }
 
-func ReadInt64(reader io.ReadSeeker, isBigEndian bool) (int64, error) {
-	x, err := ReadUInt64(reader, isBigEndian)
-	return int64(x), err
+func ReadInt64(reader io.ReadSeeker, isBigEndian bool, value *int64) error {
+	if isBigEndian {
+		return binary.Read(reader, binary.BigEndian, value)
+	} else {
+		return binary.Read(reader, binary.LittleEndian, value)
+	}
 }
 
-func WriteInt64(writer io.WriteSeeker, value int64, isBigEndian bool) error {
-	return WriteUInt64(writer, uint64(value), isBigEndian)
+func WriteInt64(writer io.WriteSeeker, isBigEndian bool, value int64) error {
+	if isBigEndian {
+		return binary.Write(writer, binary.BigEndian, &value)
+	} else {
+		return binary.Write(writer, binary.LittleEndian, &value)
+	}
 }
 
 func ReadFixedBytes(reader io.ReadSeeker, length *uint32) ([]byte, uint32, error) {
@@ -289,8 +274,10 @@ func ReadNullTerminatedBytes(reader io.ReadSeeker) ([]byte, uint32, error) {
 	var end_position int64
 	var read_length uint32
 
+	var char uint8
+
 	for {
-		_, err := reader.Read(char[:1])
+		err = binary.Read(reader, binary.NativeEndian, &char)
 		if err != nil {
 			if err == io.EOF {
 				return nil, 0, io.ErrUnexpectedEOF
@@ -299,7 +286,7 @@ func ReadNullTerminatedBytes(reader io.ReadSeeker) ([]byte, uint32, error) {
 			return nil, 0, err
 		}
 
-		if char[0] == 0 {
+		if char == 0 {
 			end_position, err = reader.Seek(0, io.SeekCurrent)
 			if err != nil {
 				return nil, 0, err
@@ -349,14 +336,7 @@ func WriteNullTerminatedBytes(writer io.WriteSeeker, data []byte, length *uint32
 		return err
 	}
 
-	char[0] = 0
-
-	_, err = writer.Write(char[:1])
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return WriteUInt8(writer, 0)
 }
 
 func ReadFixedString(reader io.ReadSeeker, length *uint32) (string, uint32, error) {
